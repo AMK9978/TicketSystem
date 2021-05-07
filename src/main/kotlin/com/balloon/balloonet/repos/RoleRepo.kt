@@ -1,10 +1,8 @@
 package com.balloon.balloonet.repos
 
-import com.balloon.balloonet.models.User
+import com.balloon.balloonet.models.Role
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 
 @Repository
-interface UserRepo : JpaRepository<User, Long> {
-    fun findByEmail(email: String?): User
-}
+interface RoleRepo : JpaRepository<Role, Long>

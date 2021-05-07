@@ -2,6 +2,7 @@ package com.balloon.balloonet.controllers
 
 import com.balloon.balloonet.models.AuthRequest
 import com.balloon.balloonet.models.User
+import com.balloon.balloonet.repos.RoleRepo
 import com.balloon.balloonet.repos.UserRepo
 import com.balloon.balloonet.util.JwtUtil
 import com.balloon.balloonet.util.Status
@@ -19,6 +20,10 @@ class UserController {
     @Autowired
     lateinit var userRepository: UserRepo
 
+
+    @Autowired
+    lateinit var roleRepository: RoleRepo
+
     @Autowired
     lateinit var authenticationManager: AuthenticationManager
 
@@ -31,9 +36,10 @@ class UserController {
     @PostMapping("/delete")
     fun deleteUser(
         @RequestParam(value = "user_id")
-        user_id: Int
+        user_id: Long
     ) {
-
+        userRepository.deleteById(user_id)
+        println("\nSUCCESS")
     }
 
     /**
@@ -41,11 +47,14 @@ class UserController {
      */
     @PostMapping("/change")
     fun changeUser(
-        @RequestParam(value = "level")
-        level: Int, @RequestParam(value = "user_id")
-        user_id: Int
+        @RequestParam(value = "role_id")
+        role_id: Long, @RequestParam(value = "user_id")
+        user_id: Long
     ) {
-
+        val user = userRepository.findById(user_id).get()
+        val role = roleRepository.findById(role_id).get()
+        user.roles.add(role)
+        userRepository.save(user)
     }
 
 }

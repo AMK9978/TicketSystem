@@ -9,6 +9,7 @@ import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.config.BeanIds
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.crypto.password.NoOpPasswordEncoder
@@ -17,6 +18,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 
 @Configuration
+@EnableWebSecurity
 class SecurityConfig : WebSecurityConfigurerAdapter() {
 
     @Autowired
@@ -28,7 +30,10 @@ class SecurityConfig : WebSecurityConfigurerAdapter() {
 
     override fun configure(http: HttpSecurity?) {
         http!!.csrf().disable().authorizeRequests()
-            .antMatchers("/auth/**").permitAll()
+            .antMatchers("/auth/**").permitAll().and()
+            .authorizeRequests()
+            .antMatchers("/users/**")
+            .hasAnyAuthority("ADMIN")
             .anyRequest().authenticated()
             .and().exceptionHandling().and().sessionManagement()
             .sessionCreationPolicy(SessionCreationPolicy.STATELESS)

@@ -1,6 +1,7 @@
 package com.balloon.balloonet.controllers
 
 import com.balloon.balloonet.exceptions.ResourceNotFoundException
+import com.balloon.balloonet.models.MyUserDetails
 import com.balloon.balloonet.models.Ticket
 import com.balloon.balloonet.models.TicketToTicket
 import com.balloon.balloonet.models.User
@@ -12,6 +13,7 @@ import com.balloon.balloonet.util.USER
 import com.balloon.balloonet.util.userLevel
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.web.bind.annotation.*
 import javax.security.auth.message.AuthException
 
@@ -56,10 +58,10 @@ class TicketController {
 
     private fun getAuthenticatedUser(): User {
         val principal = SecurityContextHolder.getContext().authentication.principal
-        if (principal !is User) {
+        if (principal !is MyUserDetails) {
             throw AuthException()
         }
-        return principal
+        return principal.user
     }
 
     /**
@@ -70,9 +72,9 @@ class TicketController {
         try {
             val ticket: Ticket = ticketRepo.findById(ticketId).get()
             val user = getAuthenticatedUser()
-            if (user.level == userLevel[USER]!! && ticket.userId != user.id) {
-                throw AuthException()
-            }
+//            if (user.level == userLevel[USER]!! && ticket.userId != user.id) {
+//                throw AuthException()
+//            }
             return ticket
         } catch (exception: Exception) {
             throw ResourceNotFoundException()
@@ -85,9 +87,9 @@ class TicketController {
     @GetMapping("/new_tickets")
     fun getNewTickets(): List<Ticket> {
         val user = getAuthenticatedUser()
-        if (user.level == userLevel[USER]!!) {
-            throw AuthException()
-        }
+//        if (user.level == userLevel[USER]!!) {
+//            throw AuthException()
+//        }
         //TODO: Return unseen tickets
         return ticketRepo.findAllBySeen(false)
     }
@@ -159,9 +161,9 @@ class TicketController {
         val user: User = getAuthenticatedUser()
         for (id in ids) {
             val ticket = ticketRepo.findById(id).get()
-            if (user.level == userLevel[ADMIN] || user.id == ticket.userId) {
-                ticketRepo.deleteById(id)
-            }
+//            if (user.level == userLevel[ADMIN] || user.id == ticket.userId) {
+//                ticketRepo.deleteById(id)
+//            }
         }
     }
 

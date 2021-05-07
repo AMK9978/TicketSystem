@@ -9,12 +9,22 @@ import javax.validation.constraints.NotBlank
 class User(
     @NotBlank
     @Column(unique = true) var email: String, @NotBlank var password: String,
-    var level: Int = 0, var name: String = "A User"
+    var name: String = "A User"
 ) {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Long = 0
+
+
+    @ManyToMany(cascade = [CascadeType.ALL], fetch = FetchType.EAGER)
+    @JoinTable(
+        name = "users_roles",
+        joinColumns = [JoinColumn(name = "user_id")],
+        inverseJoinColumns = [JoinColumn(name = "role_id")]
+    )
+    val roles: HashSet<Role> = HashSet()
+
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -31,12 +41,11 @@ class User(
         result = 31 * result + password.hashCode()
         result = 31 * result + id.hashCode()
         result = 31 * result + name.hashCode()
-        result = 31 * result + level
         return result
     }
 
     override fun toString(): String {
-        return "User(email='$email', password='$password', id=$id, name='$name', level=$level)"
+        return "User(email='$email', password='$password', id=$id, name='$name')"
     }
 
 
