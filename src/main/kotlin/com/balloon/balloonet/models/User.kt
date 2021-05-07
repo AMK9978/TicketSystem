@@ -23,7 +23,7 @@ class User(
         joinColumns = [JoinColumn(name = "user_id")],
         inverseJoinColumns = [JoinColumn(name = "role_id")]
     )
-    val roles: HashSet<Role> = HashSet()
+    var roles: Set<Role> = HashSet()
 
 
     override fun equals(other: Any?): Boolean {

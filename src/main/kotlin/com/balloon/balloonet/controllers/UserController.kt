@@ -1,16 +1,15 @@
 package com.balloon.balloonet.controllers
 
-import com.balloon.balloonet.models.AuthRequest
-import com.balloon.balloonet.models.User
+import com.balloon.balloonet.models.Role
 import com.balloon.balloonet.repos.RoleRepo
 import com.balloon.balloonet.repos.UserRepo
 import com.balloon.balloonet.util.JwtUtil
-import com.balloon.balloonet.util.Status
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.authentication.AuthenticationManager
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
-import org.springframework.ui.Model
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 
 
 @RestController
@@ -53,7 +52,15 @@ class UserController {
     ) {
         val user = userRepository.findById(user_id).get()
         val role = roleRepository.findById(role_id).get()
-        user.roles.add(role)
+        if (role in user.roles) {
+            val hashSet = HashSet<Role>(user.roles)
+            hashSet.remove(role)
+            user.roles = hashSet
+        } else {
+            val hashSet = HashSet<Role>(user.roles)
+            hashSet.add(role)
+            user.roles = hashSet
+        }
         userRepository.save(user)
     }
 
