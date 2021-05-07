@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 class AuthRequest {
-    var username: String = ""
+    var email: String = ""
     var password: String = ""
 }
