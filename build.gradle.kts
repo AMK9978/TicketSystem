@@ -26,9 +26,12 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 
 	implementation("javax.validation:validation-api:2.0.1.Final")
-	implementation("io.jsonwebtoken:jjwt:0.9")
+	implementation("io.jsonwebtoken:jjwt-api:0.11.2")
+	implementation("org.projectlombok:lombok:1.18.18")
 
 	runtimeOnly("org.postgresql:postgresql")
+	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.2")
+	runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.11.2")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("org.springframework.security:spring-security-test")
 }

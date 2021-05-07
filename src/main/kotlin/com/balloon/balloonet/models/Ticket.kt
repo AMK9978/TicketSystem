@@ -9,7 +9,7 @@ class Ticket(
         var userId: Long = 0,
         var title: String,
         var content: String,
-        var isSeen: Boolean = false,
+        var seen: Boolean = false,
         var severity: Int = 0,
 ){
         @Id

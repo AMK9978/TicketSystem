@@ -108,9 +108,9 @@ class TicketController {
     fun getMyTickets(): List<Ticket> {
         val user = getAuthenticatedUser()
         //TODO: Return those tickets which are left by current user
-        ticketRepo.findAllAndSeen(user.id, false).stream()
+        ticketRepo.findAllByUserIdAndSeen(user.id, false).stream()
             .map{
-                it.isSeen = true
+                it.seen = true
             }
         return ticketRepo.findAllByUserId(user.id)
     }
@@ -123,9 +123,10 @@ class TicketController {
         //TODO: Return those tickets which are got ticket in reply
         val user = getAuthenticatedUser()
         //TODO: Return user's tickets
-        ticketRepo.findAllByUserId(user.id).stream()
-            .map(ticket -> ticket)
-        return ticketRepo.findAllByUserIdAndSeen(user.id, false)
+//        ticketRepo.findAllByUserId(user.id).stream()
+//            .map(ticket -> ticket)
+//        return ticketRepo.findAllByUserIdAndSeen(user.id, false)
+        return arrayListOf()
     }
 
     /**

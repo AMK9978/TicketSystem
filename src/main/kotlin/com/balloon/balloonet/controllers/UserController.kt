@@ -1,13 +1,15 @@
 package com.balloon.balloonet.controllers
 
-import com.balloon.balloonet.util.Status
-import com.balloon.balloonet.dtos.UserDTO
+import com.balloon.balloonet.models.AuthRequest
 import com.balloon.balloonet.models.User
 import com.balloon.balloonet.repos.UserRepo
+import com.balloon.balloonet.util.JwtUtil
+import com.balloon.balloonet.util.Status
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.security.authentication.AuthenticationManager
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.*
-import org.springframework.web.context.request.WebRequest
 import javax.validation.Valid
 
 
@@ -17,23 +19,23 @@ class UserController {
     @Autowired
     lateinit var userRepository: UserRepo
 
+    @Autowired
+    lateinit var authenticationManager: AuthenticationManager
 
-    @RequestMapping("/login")
-    public fun login(
-        @RequestParam(name = "email") email: @Valid String,
-        @RequestParam(name = "password") password: @Valid String): String {
-        val users = userRepository.findAll()
-        return "login"
-    }
+    @Autowired
+    lateinit var jwtUtil: JwtUtil
 
-    @GetMapping("/register")
-    public fun showRegistrationForm(
-        request: WebRequest,
-        model: Model
-    ): String {
-        val userDTO = UserDTO()
-        model.addAttribute("user", userDTO)
-        return "registration"
+    @PostMapping("/login")
+    @Throws(java.lang.Exception::class)
+    fun generateToken(@RequestBody authRequest: AuthRequest): String? {
+        try {
+            authenticationManager.authenticate(
+                UsernamePasswordAuthenticationToken(authRequest.username, authRequest.password)
+            )
+        } catch (ex: java.lang.Exception) {
+            throw java.lang.Exception("inavalid username/password")
+        }
+        return jwtUtil.generateToken(authRequest.username)
     }
 
     @RequestMapping("/login-error")
@@ -43,22 +45,18 @@ class UserController {
     }
 
 
-    @PostMapping("/users/register")
+    @PostMapping("/signup")
     fun registerUser(
-        @RequestParam(name = "email") email: @Valid String,
-        @RequestParam(name = "password") password: @Valid String,
-        @RequestParam(name = "name", defaultValue = "A User") name: @Valid String,
-        @RequestParam(name = "level", defaultValue = "0") level: @Valid Int
+        @RequestBody user: User
     ): Status? {
         val users: List<User> = userRepository.findAll()
-        val newUser = User(email, password, name = name, level = level)
-        println(newUser)
-        if (newUser in users) {
+        println(user)
+        if (user in users) {
             println("User Already exists!")
             return Status.USER_ALREADY_EXISTS
         }
         return try {
-            userRepository.save(newUser)
+            userRepository.save(user)
             Status.SUCCESS
         } catch (exception: Exception) {
             Status.FAILURE
@@ -68,7 +66,7 @@ class UserController {
     /**
      * Delete a user
      */
-    @PostMapping
+    @PostMapping("/delete")
     fun deleteUser(
         @RequestParam(value = "user_id")
         user_id: Int
@@ -79,7 +77,7 @@ class UserController {
     /**
      * Change level of a user
      */
-    @PostMapping
+    @PostMapping("/change")
     fun changeUser(
         @RequestParam(value = "level")
         level: Int, @RequestParam(value = "user_id")

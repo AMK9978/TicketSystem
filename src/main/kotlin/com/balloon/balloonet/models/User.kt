@@ -23,7 +23,6 @@ class User(
         other as User
 
         if (email != other.email) return false
-        if (password != other.password) return false
         return true
     }
 
