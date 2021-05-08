@@ -5,16 +5,17 @@ import com.balloon.balloonet.models.MyUserDetails
 import com.balloon.balloonet.models.Ticket
 import com.balloon.balloonet.models.TicketToTicket
 import com.balloon.balloonet.models.User
+import com.balloon.balloonet.repos.RoleRepo
 import com.balloon.balloonet.repos.TicketRepo
 import com.balloon.balloonet.repos.TicketToTicketRepo
-import com.balloon.balloonet.util.ADMIN
 import com.balloon.balloonet.util.Status
-import com.balloon.balloonet.util.USER
-import com.balloon.balloonet.util.userLevel
+import com.balloon.balloonet.util.isAdminOrSupporter
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.security.core.userdetails.UserDetails
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 import javax.security.auth.message.AuthException
 
 
@@ -23,6 +24,9 @@ class TicketController {
 
     @Autowired
     lateinit var ticketRepo: TicketRepo
+
+    @Autowired
+    lateinit var roleRepo: RoleRepo
 
     @Autowired
     lateinit var ticketToTicketRepo: TicketToTicketRepo
@@ -34,26 +38,34 @@ class TicketController {
      */
     @PostMapping("/leave_ticket")
     fun leaveTicket(
-        @RequestHeader("authorization") token: String,
         @RequestParam(value = "title", defaultValue = "") title: String,
         @RequestParam(value = "content") content: String,
         @RequestParam(value = "severity") severity: Int,
         @RequestParam(value = "ticket_id") ticket_id: Long?
     ): Status {
         val user = getAuthenticatedUser()
-        val ticket = Ticket(user.id, title, content)
+        val ticket = Ticket(user.id, title, content, severity = severity)
 
         return try {
             ticketRepo.save(ticket)
-            if (ticket_id != null){
-                val ticketToTicket = TicketToTicket(ticket_id, ticket.id)
-                ticketToTicketRepo.save(ticketToTicket)
+            if (ticket_id != null) {
+                if (isAdminOrSupporter(user, roleRepo) || isMyTopic(user, ticket_id)) {
+                    val ticketToTicket = TicketToTicket(ticket_id, ticket.id)
+                    ticketToTicketRepo.save(ticketToTicket)
+                } else {
+                    Status.FAILURE
+                }
             }
             Status.SUCCESS
         } catch (exception: Exception) {
             Status.FAILURE
         }
 
+    }
+
+    private fun isMyTopic(user: User, ticketId: Long): Boolean {
+        val ticket = ticketRepo.findById(ticketId).get()
+        return ticket.userId == user.id
     }
 
     private fun getAuthenticatedUser(): User {
@@ -111,7 +123,7 @@ class TicketController {
         val user = getAuthenticatedUser()
         //TODO: Return those tickets which are left by current user
         ticketRepo.findAllByUserIdAndSeen(user.id, false).stream()
-            .map{
+            .map {
                 it.seen = true
             }
         return ticketRepo.findAllByUserId(user.id)
