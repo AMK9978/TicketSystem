@@ -11,9 +11,9 @@ var userLevel: HashMap<String, Int> = hashMapOf(USER to 0, SUPPORTER to 1, ADMIN
 
 
 fun isAdminOrSupporter(user: User, roleRepo: RoleRepo): Boolean {
-    return isAdmin(user, roleRepo) || user.roles.contains(roleRepo.findByName(SUPPORTER))
+    return isAdmin(user, roleRepo) || user.roles.map { role -> role.name }.contains(roleRepo.findByName(SUPPORTER).name)
 }
 
 fun isAdmin(user: User, roleRepo: RoleRepo): Boolean {
-    return user.roles.contains(roleRepo.findByName(ADMIN))
+    return user.roles.map { role -> role.name }.contains(roleRepo.findByName(ADMIN).name)
 }

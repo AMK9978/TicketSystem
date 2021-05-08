@@ -87,6 +87,10 @@ class TicketController {
             if (!isAdminOrSupporter(user, roleRepo) && ticket.userId != user.id) {
                 throw AuthException()
             }
+            if (user.id != ticket.userId){
+                ticket.seen = true
+            }
+            ticketRepo.save(ticket)
             return ticket
         } catch (exception: Exception) {
             throw ResourceNotFoundException()
@@ -99,9 +103,9 @@ class TicketController {
     @GetMapping("/new_tickets")
     fun getNewTickets(): List<Ticket> {
         val user = getAuthenticatedUser()
-//        if (user.level == userLevel[USER]!!) {
-//            throw AuthException()
-//        }
+        if (!isAdminOrSupporter(user, roleRepo)) {
+            throw AuthException()
+        }
         //TODO: Return unseen tickets
         return ticketRepo.findAllBySeen(false)
     }
