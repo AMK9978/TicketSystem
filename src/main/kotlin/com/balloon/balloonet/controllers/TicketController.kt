@@ -52,12 +52,7 @@ class TicketController {
         val ticket = Ticket(user.id, title, content, severity = severity)
         //TODO:Make parent ticket seen when it gets a reply
         return try {
-            if (ticket_id != null) {
-                val parentTicket = ticketRepo.findById(ticket_id).get()
-                if (parentTicket.status == STATUS.CLOSED) {
-                    throw CloseTicketException()
-                }
-            }
+            checkParentTicketStatus(ticket_id)
             ticketRepo.save(ticket)
             if (ticket_id != null) {
                 subscribe(ticket_id, user.id)
@@ -65,11 +60,9 @@ class TicketController {
                     val ticketToTicket = TicketToTicket(ticket_id, ticket.id)
                     ticketToTicketRepo.save(ticketToTicket)
                     val parentTicket = ticketRepo.findById(ticket_id).get()
+                    seenParentTicket(parentTicket)
                     if (isAdminOrSupporter(user, roleRepo)) {
-                        if (STATUS.CLOSED == status?.let { STATUS.valueOf(it) }) {
-                            parentTicket.status = STATUS.valueOf(CLOSED)
-                            ticketRepo.save(parentTicket)
-                        }
+                        closeParentTicket(status, parentTicket)
                         updateSubscribers(parentTicket, notifyStaffs = false, notifyCreator = true)
                     } else {
                         updateSubscribers(parentTicket, notifyStaffs = true, notifyCreator = false)
@@ -87,6 +80,27 @@ class TicketController {
             Status.FAILURE
         }
 
+    }
+
+    private fun seenParentTicket(parentTicket: Ticket) {
+        parentTicket.seen = true
+        ticketRepo.save(parentTicket)
+    }
+
+    private fun closeParentTicket(status: String?, parentTicket: Ticket) {
+        if (STATUS.CLOSED == status?.let { STATUS.valueOf(it) }) {
+            parentTicket.status = STATUS.valueOf(CLOSED)
+            ticketRepo.save(parentTicket)
+        }
+    }
+
+    private fun checkParentTicketStatus(ticket_id: Long?) {
+        if (ticket_id != null) {
+            val parentTicket = ticketRepo.findById(ticket_id).get()
+            if (parentTicket.status == STATUS.CLOSED) {
+                throw CloseTicketException()
+            }
+        }
     }
 
     private fun updateSubscribers(ticket: Ticket, notifyStaffs: Boolean, notifyCreator: Boolean) {
