@@ -9,9 +9,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 class BalloonetApplication
 
 fun main(args: Array<String>) {
-	runApplication<BalloonetApplication>(*args)
+    runApplication<BalloonetApplication>(*args)
 }
 
-@Bean fun bCryptPasswordEncoder(): BCryptPasswordEncoder{
-	return BCryptPasswordEncoder()
+@Bean
+fun bCryptPasswordEncoder(): BCryptPasswordEncoder {
+    return BCryptPasswordEncoder()
 }

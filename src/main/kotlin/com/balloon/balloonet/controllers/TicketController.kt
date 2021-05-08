@@ -1,5 +1,6 @@
 package com.balloon.balloonet.controllers
 
+import com.balloon.balloonet.exceptions.CloseTicketException
 import com.balloon.balloonet.exceptions.ResourceNotFoundException
 import com.balloon.balloonet.models.*
 import com.balloon.balloonet.repos.RoleRepo
@@ -44,12 +45,19 @@ class TicketController {
         @RequestParam(value = "title", defaultValue = "") title: String,
         @RequestParam(value = "content") content: String,
         @RequestParam(value = "severity") severity: Int,
+        @RequestParam(value = "status") status: String?,
         @RequestParam(value = "ticket_id") ticket_id: Long?
     ): Status {
         val user = getAuthenticatedUser()
         val ticket = Ticket(user.id, title, content, severity = severity)
 
         return try {
+            if (ticket_id != null) {
+                val parentTicket = ticketRepo.findById(ticket_id).get()
+                if (parentTicket.status == STATUS.CLOSED) {
+                    throw CloseTicketException()
+                }
+            }
             ticketRepo.save(ticket)
             if (ticket_id != null) {
                 subscribe(ticket_id, user.id)
@@ -58,11 +66,17 @@ class TicketController {
                     ticketToTicketRepo.save(ticketToTicket)
                     val parentTicket = ticketRepo.findById(ticket_id).get()
                     if (isAdminOrSupporter(user, roleRepo)) {
+                        if (STATUS.CLOSED == status?.let { STATUS.valueOf(it) }) {
+                            parentTicket.status = STATUS.valueOf(CLOSED)
+                            ticketRepo.save(parentTicket)
+                        }
                         updateSubscribers(parentTicket, notifyStaffs = false, notifyCreator = true)
                     } else {
                         updateSubscribers(parentTicket, notifyStaffs = true, notifyCreator = false)
                     }
                 } else {
+                    val ticketToTicket = TicketToTicket(ticket.id, ticket.id)
+                    ticketToTicketRepo.save(ticketToTicket)
                     Status.FAILURE
                 }
             } else {
@@ -139,8 +153,12 @@ class TicketController {
         if (!isAdminOrSupporter(user, roleRepo)) {
             throw AuthException()
         }
-        //TODO: Return unseen tickets
-        return ticketRepo.findAllBySeen(false)
+        return ticketRepo.findAllBySeen(false).filter {
+            it.userId == user.id
+        }.map {
+            val topic = ticketToTicketRepo.findByReplyId(it.id)
+            ticketRepo.findById(topic.ticketId).get()
+        }.toSet().toList()
     }
 
 
@@ -159,7 +177,6 @@ class TicketController {
     fun getMyTickets(): List<Ticket> {
         val user = getAuthenticatedUser()
         //TODO: Return those tickets which are left by current user
-        ticketRepo.findAllByUserId(user.id)
         return ticketRepo.findAllByUserId(user.id)
     }
 
@@ -168,12 +185,7 @@ class TicketController {
      */
     @GetMapping("/updated_tickets")
     fun getMyUpdatedTickets(): List<Ticket> {
-        //TODO: Return those tickets which got ticket in reply
         val user = getAuthenticatedUser()
-        //TODO: Return user's tickets
-        println("\n:" + subscriptionRepo.findByUserIdAndNotified(userId = user.id, true))
-        println(subscriptionRepo.findByUserIdAndNotified(userId = user.id, false))
-        println(user.id)
         return subscriptionRepo.findByUserIdAndNotified(userId = user.id, true).map {
             ticketRepo.findById(it.ticketId).get()
         }
@@ -196,7 +208,8 @@ class TicketController {
         @RequestParam(value = "id") id: Long,
         @RequestParam(value = "title") title: String,
         @RequestParam(value = "content") content: String,
-        @RequestParam(value = "severity") severity: Int
+        @RequestParam(value = "severity") severity: Int,
+        @RequestParam(value = "status") status: String?
     ): Status {
         val user = getAuthenticatedUser()
         val ticket = ticketRepo.findById(id).get()
@@ -206,8 +219,24 @@ class TicketController {
         ticket.content = content
         ticket.title = title
         ticket.severity = severity
+        status?.let {
+            if (isAdminOrSupporter(user, roleRepo)) {
+                val parentTicket = getParentTicket(ticket.id)
+                if (it == CLOSED) {
+                    parentTicket.status = STATUS.CLOSED
+                } else if (it == OPEN) {
+                    parentTicket.status = STATUS.OPEN
+                }
+                ticketRepo.save(parentTicket)
+            }
+        }
         ticketRepo.save(ticket)
         return Status.SUCCESS
+    }
+
+
+    fun getParentTicket(replyTicketId: Long): Ticket {
+        return ticketRepo.findById(ticketToTicketRepo.findByReplyId(replyTicketId).ticketId).get()
     }
 
     /**
