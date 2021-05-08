@@ -10,11 +10,14 @@ import com.balloon.balloonet.repos.TicketToTicketRepo
 import com.balloon.balloonet.util.Status
 import com.balloon.balloonet.util.isAdminOrSupporter
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import java.util.*
 import java.util.stream.Collectors
 import javax.security.auth.message.AuthException
 
@@ -47,10 +50,10 @@ class TicketController {
         @RequestParam(value = "severity") severity: Int,
         @RequestParam(value = "status") status: String?,
         @RequestParam(value = "ticket_id") ticket_id: Long?
-    ): Status {
+    ): ResponseEntity<Any> {
         val user = getAuthenticatedUser()
         val ticket = Ticket(user.id, title, content, severity = severity)
-        return try {
+        try {
             checkParentTicketStatus(ticket_id)
             ticketRepo.save(ticket)
             if (ticket_id != null) {
@@ -67,16 +70,16 @@ class TicketController {
                         updateSubscribers(parentTicket, notifyStaffs = true, notifyCreator = false)
                     }
                 } else {
-                    Status.FAILURE
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
                 }
             } else {
                 val ticketToTicket = TicketToTicket(ticket.id, ticket.id)
                 ticketToTicketRepo.save(ticketToTicket)
                 subscribe(ticket.id, user.id)
             }
-            Status.SUCCESS
+            return ResponseEntity.ok().build()
         } catch (exception: Exception) {
-            Status.FAILURE
+            return ResponseEntity.notFound().build()
         }
 
     }
@@ -130,12 +133,12 @@ class TicketController {
      * Get ticket content by admin/user
      */
     @PostMapping("/get_ticket")
-    fun getTicketThread(@RequestParam(value = "ticket_id") ticketId: Long): MutableList<Ticket> {
+    fun getTicketThread(@RequestParam(value = "ticket_id") ticketId: Long): ResponseEntity<Any> {
         try {
             val ticket: Ticket = ticketRepo.findById(ticketId).get()
             val user = getAuthenticatedUser()
             if (!isAdminOrSupporter(user, roleRepo) && ticket.userId != user.id) {
-                throw AuthException()
+                return ResponseEntity.status(401).body("You are not allowed")
             }
             val ticketParents = getTicketParents(ticket)
             if (ticket.userId != user.id) {
@@ -144,9 +147,9 @@ class TicketController {
                     ticketRepo.save(it)
                 }
             }
-            return ticketParents
+            return ResponseEntity.ok(ticketParents)
         } catch (exception: Exception) {
-            throw ResourceNotFoundException()
+            return ResponseEntity.badRequest().build()
         }
     }
 
@@ -161,17 +164,17 @@ class TicketController {
      * Get unseen tickets
      */
     @GetMapping("/new_tickets")
-    fun getNewTickets(): List<Ticket> {
+    fun getNewTickets(): ResponseEntity<Any> {
         val user = getAuthenticatedUser()
         if (!isAdminOrSupporter(user, roleRepo)) {
-            throw AuthException()
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
         }
-        return ticketRepo.findAllBySeen(false).filter {
+        return ResponseEntity.ok(ticketRepo.findAllBySeen(false).filter {
             it.userId != user.id
         }.map {
             val topic = ticketToTicketRepo.findByReplyId(it.id)
             ticketRepo.findById(topic.ticketId).get()
-        }.toSet().toList()
+        }.toSet().toList())
     }
 
 
@@ -179,28 +182,28 @@ class TicketController {
      * Get all tickets
      */
     @GetMapping("/tickets")
-    fun getTickets(): MutableList<Ticket> {
-        return ticketRepo.findAll()
+    fun getTickets(): ResponseEntity<Any> {
+        return ResponseEntity.ok(ticketRepo.findAll())
     }
 
     /**
      * Get tickets by user
      */
     @GetMapping("/my_tickets")
-    fun getMyTickets(): List<Ticket> {
+    fun getMyTickets(): ResponseEntity<Any> {
         val user = getAuthenticatedUser()
-        return ticketRepo.findAllByUserId(user.id)
+        return ResponseEntity.ok(ticketRepo.findAllByUserId(user.id))
     }
 
     /**
      * Get updated tickets by user
      */
     @GetMapping("/updated_tickets")
-    fun getMyUpdatedTickets(): List<Ticket> {
+    fun getMyUpdatedTickets(): ResponseEntity<Any> {
         val user = getAuthenticatedUser()
-        return subscriptionRepo.findByUserIdAndNotified(userId = user.id, true).map {
+        return ResponseEntity.ok(subscriptionRepo.findByUserIdAndNotified(userId = user.id, true).map {
             ticketRepo.findById(it.ticketId).get()
-        }
+        })
     }
 
 
@@ -222,11 +225,11 @@ class TicketController {
         @RequestParam(value = "content") content: String,
         @RequestParam(value = "severity") severity: Int,
         @RequestParam(value = "status") status: String?
-    ): Status {
+    ): ResponseEntity<Any> {
         val user = getAuthenticatedUser()
         val ticket = ticketRepo.findById(id).get()
         if (ticket.userId != user.id) {
-            return Status.FAILURE
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
         }
         ticket.content = content
         ticket.title = title
@@ -243,7 +246,7 @@ class TicketController {
             }
         }
         ticketRepo.save(ticket)
-        return Status.SUCCESS
+        return ResponseEntity.ok().build()
     }
 
 
@@ -255,7 +258,7 @@ class TicketController {
      * Delete tickets by user/admin
      */
     @PostMapping("/delete_tickets")
-    fun deleteTickets(@RequestParam ids: LongArray) {
+    fun deleteTickets(@RequestParam ids: LongArray): ResponseEntity<Any> {
         val user: User = getAuthenticatedUser()
         for (id in ids) {
             val ticket = ticketRepo.findById(id).get()
@@ -263,8 +266,11 @@ class TicketController {
                 ticketToTicketRepo.findAllByTicketId(id).forEach {
                     ticketRepo.deleteById(it.replyId)
                 }
+            }else{
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
             }
         }
+        return ResponseEntity.ok().build()
     }
 
 }

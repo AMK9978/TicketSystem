@@ -6,6 +6,7 @@ import com.balloon.balloonet.repos.UserRepo
 import com.balloon.balloonet.util.JwtUtil
 import com.balloon.balloonet.util.Status
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.ui.Model
@@ -48,18 +49,17 @@ class AuthController {
     @PostMapping("/signup")
     fun registerUser(
         @RequestBody user: User
-    ): Status? {
+    ): ResponseEntity<Any> {
         val users: List<User> = userRepository.findAll()
         println(user)
         if (user in users) {
-            println("User Already exists!")
-            return Status.USER_ALREADY_EXISTS
+            return ResponseEntity.badRequest().body("User Already exists!")
         }
         return try {
             userRepository.save(user)
-            Status.SUCCESS
+            ResponseEntity.ok().body("User registered")
         } catch (exception: Exception) {
-            Status.FAILURE
+            ResponseEntity.badRequest().build()
         }
     }
 }

@@ -5,6 +5,7 @@ import com.balloon.balloonet.repos.RoleRepo
 import com.balloon.balloonet.repos.UserRepo
 import com.balloon.balloonet.util.JwtUtil
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -30,9 +31,9 @@ class UserController {
     fun deleteUser(
         @RequestParam(value = "user_id")
         user_id: Long
-    ) {
+    ): ResponseEntity<Any> {
         userRepository.deleteById(user_id)
-        println("\nSUCCESS")
+        return ResponseEntity.ok().build()
     }
 
     /**
@@ -43,7 +44,7 @@ class UserController {
         @RequestParam(value = "role_id")
         role_id: Long, @RequestParam(value = "user_id")
         user_id: Long
-    ) {
+    ): ResponseEntity<Any> {
         val user = userRepository.findById(user_id).get()
         val role = roleRepository.findById(role_id).get()
         if (role in user.roles) {
@@ -56,6 +57,7 @@ class UserController {
             user.roles = hashSet
         }
         userRepository.save(user)
+        return ResponseEntity.ok().build()
     }
 
 }
