@@ -11,6 +11,7 @@ class TicketToTicket(
     @NotBlank
     @OnDelete(action = OnDeleteAction.CASCADE)
     var ticketId: Long = 0,
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @NotBlank
     var replyId: Long = 0,
 ) {

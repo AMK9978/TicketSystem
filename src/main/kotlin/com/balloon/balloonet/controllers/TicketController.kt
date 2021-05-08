@@ -248,7 +248,9 @@ class TicketController {
         for (id in ids) {
             val ticket = ticketRepo.findById(id).get()
             if (isAdminOrSupporter(user, roleRepo) || user.id == ticket.userId) {
-                ticketRepo.deleteById(id)
+                ticketToTicketRepo.findAllByTicketId(id).forEach {
+                    ticketRepo.deleteById(it.replyId)
+                }
             }
         }
     }
