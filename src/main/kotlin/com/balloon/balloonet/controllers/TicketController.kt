@@ -10,7 +10,6 @@ import com.balloon.balloonet.repos.TicketToTicketRepo
 import com.balloon.balloonet.util.Status
 import com.balloon.balloonet.util.isAdminOrSupporter
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping

@@ -1,4 +1,4 @@
-package com.balloon.balloonet
+package com.balloon.balloonet.configs
 
 import com.balloon.balloonet.filter.JwtFilter
 import com.balloon.balloonet.services.UserService

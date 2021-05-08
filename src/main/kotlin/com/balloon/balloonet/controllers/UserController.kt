@@ -23,12 +23,6 @@ class UserController {
     @Autowired
     lateinit var roleRepository: RoleRepo
 
-    @Autowired
-    lateinit var authenticationManager: AuthenticationManager
-
-    @Autowired
-    lateinit var jwtUtil: JwtUtil
-
     /**
      * Delete a user
      */
