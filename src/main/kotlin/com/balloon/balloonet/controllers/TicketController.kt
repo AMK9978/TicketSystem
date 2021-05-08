@@ -84,9 +84,9 @@ class TicketController {
         try {
             val ticket: Ticket = ticketRepo.findById(ticketId).get()
             val user = getAuthenticatedUser()
-//            if (user.level == userLevel[USER]!! && ticket.userId != user.id) {
-//                throw AuthException()
-//            }
+            if (!isAdminOrSupporter(user, roleRepo) && ticket.userId != user.id) {
+                throw AuthException()
+            }
             return ticket
         } catch (exception: Exception) {
             throw ResourceNotFoundException()
