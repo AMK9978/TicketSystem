@@ -1,11 +1,9 @@
 package com.balloon.balloonet.controllers
 
 import com.balloon.balloonet.exceptions.ResourceNotFoundException
-import com.balloon.balloonet.models.MyUserDetails
-import com.balloon.balloonet.models.Ticket
-import com.balloon.balloonet.models.TicketToTicket
-import com.balloon.balloonet.models.User
+import com.balloon.balloonet.models.*
 import com.balloon.balloonet.repos.RoleRepo
+import com.balloon.balloonet.repos.SubscriptionRepo
 import com.balloon.balloonet.repos.TicketRepo
 import com.balloon.balloonet.repos.TicketToTicketRepo
 import com.balloon.balloonet.util.Status
@@ -16,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import java.util.stream.Collectors
 import javax.security.auth.message.AuthException
 
 
@@ -30,6 +29,10 @@ class TicketController {
 
     @Autowired
     lateinit var ticketToTicketRepo: TicketToTicketRepo
+
+
+    @Autowired
+    lateinit var subscriptionRepo: SubscriptionRepo
 
 
     /**
@@ -49,18 +52,38 @@ class TicketController {
         return try {
             ticketRepo.save(ticket)
             if (ticket_id != null) {
+                subscribe(ticket_id, user.id)
                 if (isAdminOrSupporter(user, roleRepo) || isMyTopic(user, ticket_id)) {
                     val ticketToTicket = TicketToTicket(ticket_id, ticket.id)
                     ticketToTicketRepo.save(ticketToTicket)
+                    val parentTicket = ticketRepo.findById(ticket_id).get()
+                    if (isAdminOrSupporter(user, roleRepo)) {
+                        updateSubscribers(parentTicket, notifyStaffs = false, notifyCreator = true)
+                    } else {
+                        updateSubscribers(parentTicket, notifyStaffs = true, notifyCreator = false)
+                    }
                 } else {
                     Status.FAILURE
                 }
+            } else {
+                subscribe(ticket.id, user.id)
             }
             Status.SUCCESS
         } catch (exception: Exception) {
             Status.FAILURE
         }
 
+    }
+
+    private fun updateSubscribers(ticket: Ticket, notifyStaffs: Boolean, notifyCreator: Boolean) {
+        subscriptionRepo.findByTicketId(ticketId = ticket.id).forEach {
+            if (ticket.userId == it.userId) {
+                it.notified = notifyCreator
+            } else {
+                it.notified = notifyStaffs
+            }
+            subscriptionRepo.save(it)
+        }
     }
 
     private fun isMyTopic(user: User, ticketId: Long): Boolean {
@@ -80,21 +103,31 @@ class TicketController {
      * Get ticket content by admin/user
      */
     @PostMapping("/get_ticket")
-    fun getTicket(@RequestParam(value = "ticket_id") ticketId: Long): Ticket {
+    fun getTicketThread(@RequestParam(value = "ticket_id") ticketId: Long): MutableList<Ticket> {
         try {
             val ticket: Ticket = ticketRepo.findById(ticketId).get()
             val user = getAuthenticatedUser()
             if (!isAdminOrSupporter(user, roleRepo) && ticket.userId != user.id) {
                 throw AuthException()
             }
-            if (user.id != ticket.userId){
-                ticket.seen = true
+            val ticketParents = getTicketParents(ticket)
+            if (ticket.userId != user.id) {
+                ticketParents.map {
+                    it.seen = true
+                    ticketRepo.save(it)
+                }
             }
-            ticketRepo.save(ticket)
-            return ticket
+            return ticketParents
         } catch (exception: Exception) {
             throw ResourceNotFoundException()
         }
+    }
+
+    fun getTicketParents(ticket: Ticket): MutableList<Ticket> {
+        val ticketTotTicket = ticketToTicketRepo.findByReplyId(replyId = ticket.id)
+        return ticketToTicketRepo.findAllByTicketId(ticketId = ticketTotTicket.ticketId).stream().map {
+            ticketRepo.findById(it.replyId).get()
+        }.collect(Collectors.toList())
     }
 
     /**
@@ -126,10 +159,7 @@ class TicketController {
     fun getMyTickets(): List<Ticket> {
         val user = getAuthenticatedUser()
         //TODO: Return those tickets which are left by current user
-        ticketRepo.findAllByUserIdAndSeen(user.id, false).stream()
-            .map {
-                it.seen = true
-            }
+        ticketRepo.findAllByUserId(user.id)
         return ticketRepo.findAllByUserId(user.id)
     }
 
@@ -137,14 +167,25 @@ class TicketController {
      * Get updated tickets by user
      */
     @GetMapping("/updated_tickets")
-    public fun getMyUpdatedTickets(): List<Ticket> {
-        //TODO: Return those tickets which are got ticket in reply
+    fun getMyUpdatedTickets(): List<Ticket> {
+        //TODO: Return those tickets which got ticket in reply
         val user = getAuthenticatedUser()
         //TODO: Return user's tickets
-//        ticketRepo.findAllByUserId(user.id).stream()
-//            .map(ticket -> ticket)
-//        return ticketRepo.findAllByUserIdAndSeen(user.id, false)
-        return arrayListOf()
+        println("\n:" + subscriptionRepo.findByUserIdAndNotified(userId = user.id, true))
+        println(subscriptionRepo.findByUserIdAndNotified(userId = user.id, false))
+        println(user.id)
+        return subscriptionRepo.findByUserIdAndNotified(userId = user.id, true).map {
+            ticketRepo.findById(it.ticketId).get()
+        }
+    }
+
+
+    fun subscribe(ticketId: Long, userId: Long) {
+        if (subscriptionRepo.findByUserIdAndTicketId(userId, ticketId) != null) {
+            return
+        }
+        val subscription = Subscription(ticketId, userId, false)
+        subscriptionRepo.save(subscription)
     }
 
     /**
@@ -177,9 +218,9 @@ class TicketController {
         val user: User = getAuthenticatedUser()
         for (id in ids) {
             val ticket = ticketRepo.findById(id).get()
-//            if (user.level == userLevel[ADMIN] || user.id == ticket.userId) {
-//                ticketRepo.deleteById(id)
-//            }
+            if (isAdminOrSupporter(user, roleRepo) || user.id == ticket.userId) {
+                ticketRepo.deleteById(id)
+            }
         }
     }
 

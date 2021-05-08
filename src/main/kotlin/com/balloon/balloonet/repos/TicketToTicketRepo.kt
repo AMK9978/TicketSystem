@@ -8,6 +8,5 @@ import org.springframework.stereotype.Repository
 interface TicketToTicketRepo : JpaRepository<TicketToTicket, Long> {
 
     fun findAllByTicketId(ticketId: Long): List<TicketToTicket>
-    fun findAllByReplyId(replyId: Long): List<TicketToTicket>
-
+    fun findByReplyId(replyId: Long): TicketToTicket
 }
