@@ -50,7 +50,7 @@ class TicketController {
     ): Status {
         val user = getAuthenticatedUser()
         val ticket = Ticket(user.id, title, content, severity = severity)
-
+        //TODO:Make parent ticket seen when it gets a reply
         return try {
             if (ticket_id != null) {
                 val parentTicket = ticketRepo.findById(ticket_id).get()
@@ -75,11 +75,11 @@ class TicketController {
                         updateSubscribers(parentTicket, notifyStaffs = true, notifyCreator = false)
                     }
                 } else {
-                    val ticketToTicket = TicketToTicket(ticket.id, ticket.id)
-                    ticketToTicketRepo.save(ticketToTicket)
                     Status.FAILURE
                 }
             } else {
+                val ticketToTicket = TicketToTicket(ticket.id, ticket.id)
+                ticketToTicketRepo.save(ticketToTicket)
                 subscribe(ticket.id, user.id)
             }
             Status.SUCCESS
@@ -154,7 +154,7 @@ class TicketController {
             throw AuthException()
         }
         return ticketRepo.findAllBySeen(false).filter {
-            it.userId == user.id
+            it.userId != user.id
         }.map {
             val topic = ticketToTicketRepo.findByReplyId(it.id)
             ticketRepo.findById(topic.ticketId).get()
