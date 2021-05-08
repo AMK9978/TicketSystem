@@ -10,6 +10,7 @@ import com.balloon.balloonet.repos.TicketToTicketRepo
 import com.balloon.balloonet.util.Status
 import com.balloon.balloonet.util.isAdminOrSupporter
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
@@ -50,7 +51,6 @@ class TicketController {
     ): Status {
         val user = getAuthenticatedUser()
         val ticket = Ticket(user.id, title, content, severity = severity)
-        //TODO:Make parent ticket seen when it gets a reply
         return try {
             checkParentTicketStatus(ticket_id)
             ticketRepo.save(ticket)
@@ -190,7 +190,6 @@ class TicketController {
     @GetMapping("/my_tickets")
     fun getMyTickets(): List<Ticket> {
         val user = getAuthenticatedUser()
-        //TODO: Return those tickets which are left by current user
         return ticketRepo.findAllByUserId(user.id)
     }
 
