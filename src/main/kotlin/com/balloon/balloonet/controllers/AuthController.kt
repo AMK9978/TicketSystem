@@ -4,7 +4,9 @@ import com.balloon.balloonet.models.AuthRequest
 import com.balloon.balloonet.models.User
 import com.balloon.balloonet.repos.UserRepo
 import com.balloon.balloonet.util.JwtUtil
+import com.balloon.balloonet.util.getMessageBody
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
@@ -36,9 +38,9 @@ class AuthController {
                 UsernamePasswordAuthenticationToken(authRequest.email, authRequest.password)
             )
         } catch (ex: java.lang.Exception) {
-            return ResponseEntity.badRequest().body("Invalid email/password")
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(getMessageBody(value = "Invalid email/password"))
         }
-        return ResponseEntity.ok(jwtUtil.generateToken(authRequest.email))
+        return ResponseEntity.ok(jwtUtil.generateToken(authRequest.email)?.let { getMessageBody("token", it) })
     }
 
     @RequestMapping("/login-error")
@@ -52,13 +54,12 @@ class AuthController {
     fun registerUser(
         @RequestBody user: User
     ): ResponseEntity<Any> {
-        val users: List<User> = userRepository.findAll()
-        if (user in users) {
-            return ResponseEntity.badRequest().body("User Already exists!")
+        if (userRepository.existsByEmail(user.email)) {
+            return ResponseEntity.badRequest().body(getMessageBody(value = "User Already exists!"))
         }
         return try {
             userRepository.save(user)
-            ResponseEntity.ok().body("User registered")
+            ResponseEntity.ok().body(getMessageBody(value = "User registered"))
         } catch (exception: Exception) {
             ResponseEntity.badRequest().build()
         }
