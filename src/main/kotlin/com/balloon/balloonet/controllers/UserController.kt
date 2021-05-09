@@ -3,11 +3,12 @@ package com.balloon.balloonet.controllers
 import com.balloon.balloonet.models.Role
 import com.balloon.balloonet.repos.RoleRepo
 import com.balloon.balloonet.repos.UserRepo
-import com.balloon.balloonet.util.JwtUtil
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.ResponseEntity
-import org.springframework.security.authentication.AuthenticationManager
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 
 
 @RestController

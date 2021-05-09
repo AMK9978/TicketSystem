@@ -43,13 +43,6 @@ class AuthController {
         return ResponseEntity.ok(jwtUtil.generateToken(authRequest.email)?.let { getMessageBody("token", it) })
     }
 
-    @RequestMapping("/login-error")
-    fun loginError(model: Model): String? {
-        model.addAttribute("loginError", true)
-        return "login.html"
-    }
-
-
     @PostMapping("/signup")
     fun registerUser(
         @RequestBody user: User

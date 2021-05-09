@@ -15,7 +15,7 @@ class SpringFoxConfig {
     fun api(): Docket1 {
         return Docket1(DocumentationType.SWAGGER_2)
             .select()
-            .apis(RequestHandlerSelectors.any())
+            .apis( RequestHandlerSelectors.basePackage( "com.balloon.balloonet" ) )
             .paths(PathSelectors.any())
             .build()
     }
