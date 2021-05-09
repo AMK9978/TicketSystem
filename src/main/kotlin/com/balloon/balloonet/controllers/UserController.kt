@@ -21,10 +21,6 @@ class UserController {
     @Autowired
     lateinit var roleRepository: RoleRepo
 
-    @GetMapping("/home")
-    fun home(): String {
-        return "home"
-    }
     /**
      * Delete a user
      */

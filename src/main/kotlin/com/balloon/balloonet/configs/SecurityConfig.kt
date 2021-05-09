@@ -36,7 +36,7 @@ class SecurityConfig : WebSecurityConfigurerAdapter() {
                 "/webjars/**"
             ).permitAll()?.and()!!.authorizeRequests()
             .antMatchers("/auth/**").permitAll().and()
-            .authorizeRequests().antMatchers("/swagger-ui.html", "/users/home").permitAll().and()
+            .authorizeRequests().antMatchers("/swagger-ui.html").permitAll().and()
             .authorizeRequests()
             .antMatchers("/users/**")
             .hasAnyAuthority("ADMIN")

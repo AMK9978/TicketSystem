@@ -1,13 +1,11 @@
 package com.balloon.balloonet.controllers
 
 import com.balloon.balloonet.exceptions.CloseTicketException
-import com.balloon.balloonet.exceptions.ResourceNotFoundException
 import com.balloon.balloonet.models.*
 import com.balloon.balloonet.repos.RoleRepo
 import com.balloon.balloonet.repos.SubscriptionRepo
 import com.balloon.balloonet.repos.TicketRepo
 import com.balloon.balloonet.repos.TicketToTicketRepo
-import com.balloon.balloonet.util.Status
 import com.balloon.balloonet.util.isAdminOrSupporter
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
@@ -17,7 +15,6 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
-import java.util.*
 import java.util.stream.Collectors
 import javax.security.auth.message.AuthException
 
@@ -266,7 +263,7 @@ class TicketController {
                 ticketToTicketRepo.findAllByTicketId(id).forEach {
                     ticketRepo.deleteById(it.replyId)
                 }
-            }else{
+            } else {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
             }
         }

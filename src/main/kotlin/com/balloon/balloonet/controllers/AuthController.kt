@@ -4,13 +4,15 @@ import com.balloon.balloonet.models.AuthRequest
 import com.balloon.balloonet.models.User
 import com.balloon.balloonet.repos.UserRepo
 import com.balloon.balloonet.util.JwtUtil
-import com.balloon.balloonet.util.Status
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.ui.Model
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
 
 
 @RestController
@@ -28,15 +30,15 @@ class AuthController {
 
     @PostMapping("/login")
     @Throws(java.lang.Exception::class)
-    fun generateToken(@RequestBody authRequest: AuthRequest): String? {
+    fun generateToken(@RequestBody authRequest: AuthRequest): ResponseEntity<String> {
         try {
             authenticationManager.authenticate(
                 UsernamePasswordAuthenticationToken(authRequest.email, authRequest.password)
             )
         } catch (ex: java.lang.Exception) {
-            throw java.lang.Exception("inavalid username/password")
+            return ResponseEntity.badRequest().body("Invalid email/password")
         }
-        return jwtUtil.generateToken(authRequest.email)
+        return ResponseEntity.ok(jwtUtil.generateToken(authRequest.email))
     }
 
     @RequestMapping("/login-error")
@@ -51,7 +53,6 @@ class AuthController {
         @RequestBody user: User
     ): ResponseEntity<Any> {
         val users: List<User> = userRepository.findAll()
-        println(user)
         if (user in users) {
             return ResponseEntity.badRequest().body("User Already exists!")
         }
