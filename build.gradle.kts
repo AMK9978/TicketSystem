@@ -38,6 +38,8 @@ dependencies {
 	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.2")
 	runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.11.2")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
+	testImplementation("com.h2database:h2:1.3.148")
+	testImplementation("org.junit.vintage:junit-vintage-engine:5.7.1")
 	testImplementation("org.springframework.security:spring-security-test")
 }
 

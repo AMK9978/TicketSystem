@@ -9,7 +9,4 @@ import lombok.NoArgsConstructor
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-class AuthRequest {
-    var email: String = ""
-    var password: String = ""
-}
+class AuthRequest(var email: String, var password: String)
