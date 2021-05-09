@@ -4,7 +4,7 @@ plugins {
 	id("org.springframework.boot") version "2.4.5"
 	id("io.spring.dependency-management") version "1.0.11.RELEASE"
 
-	id("io.swagger.core.v3.swagger-gradle-plugin") version "2.1.9"
+//	id("io.swagger.core.v3.swagger-gradle-plugin") version "2.1.9"
 
 	kotlin("jvm") version "1.4.32"
 	kotlin("plugin.spring") version "1.4.32"
@@ -31,6 +31,8 @@ dependencies {
 	implementation("javax.validation:validation-api:2.0.1.Final")
 	implementation("io.jsonwebtoken:jjwt-api:0.11.2")
 	implementation("org.projectlombok:lombok:1.18.18")
+	implementation("io.springfox:springfox-swagger2:2.9.2")
+	implementation("io.springfox:springfox-swagger-ui:2.9.2")
 
 	runtimeOnly("org.postgresql:postgresql")
 	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.2")

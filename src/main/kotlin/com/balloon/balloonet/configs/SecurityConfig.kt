@@ -27,10 +27,16 @@ class SecurityConfig : WebSecurityConfigurerAdapter() {
     @Autowired
     lateinit var jwtFilter: JwtFilter
 
-
     override fun configure(http: HttpSecurity?) {
         http!!.csrf().disable().authorizeRequests()
+            .antMatchers(
+                "/swagger-resources/**",
+                "/swagger-ui.html",
+                "/v2/api-docs",
+                "/webjars/**"
+            ).permitAll()?.and()!!.authorizeRequests()
             .antMatchers("/auth/**").permitAll().and()
+            .authorizeRequests().antMatchers("/swagger-ui.html", "/users/home").permitAll().and()
             .authorizeRequests()
             .antMatchers("/users/**")
             .hasAnyAuthority("ADMIN")
