@@ -5,7 +5,7 @@ plugins {
 	id("io.spring.dependency-management") version "1.0.11.RELEASE"
 
 //	id("io.swagger.core.v3.swagger-gradle-plugin") version "2.1.9"
-
+	id("org.flywaydb.flyway") version "5.2.4"
 	kotlin("jvm") version "1.4.32"
 	kotlin("plugin.spring") version "1.4.32"
 	kotlin("plugin.jpa") version "1.4.32"
@@ -34,7 +34,7 @@ dependencies {
 	implementation("io.springfox:springfox-swagger2:2.9.2")
 	implementation("io.springfox:springfox-swagger-ui:2.9.2")
 
-	runtimeOnly("org.postgresql:postgresql")
+	runtimeOnly("org.postgresql:postgresql:42.1.4")
 	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.2")
 	runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.11.2")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -52,4 +52,14 @@ tasks.withType<KotlinCompile> {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+}
+
+flyway {
+	driver = "org.postgresql.Driver"
+	baselineVersion = "1"
+	url = "jdbc:postgresql://127.0.0.1:5432/balloonet"
+	user = "amir"
+	password ="amir"
+	baselineOnMigrate = true
+	locations = arrayOf("filesystem: resources / db / migration")
 }
